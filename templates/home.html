@@ -1,75 +1,234 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Spam_Bot.exe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            margin: 0; font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            color: white; height: 100vh; display: flex; align-items: center; justify-content: center;
+        :root {
+            --deep-red: #660000; /* Vermelho mais fechado e escuro */
+            --bright-red: #cc0000;
+            --bg-black: #020202;
         }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(15px);
-            padding: 50px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1);
-            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
         }
-        h1 { font-size: 3.5rem; margin-bottom: 10px; color: #00d2ff; text-shadow: 0 0 10px #00d2ff; }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--bg-black);
+            font-family: 'Rajdhani', sans-serif;
+            overflow: hidden; /* Impede qualquer barra de rolagem */
+        }
+
+        /* Fundo Hacker (Matrix) */
+        #q { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; 
+        }
+
+        /* CARTÃO CENTRALIZADO - Técnica de Centro Absoluto */
+        .main-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Centraliza perfeitamente em qualquer tela */
+            z-index: 2;
+            width: 90%;
+            max-width: 400px;
+            background: rgba(5, 0, 0, 0.95);
+            border: 2px solid var(--deep-red);
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 1), 0 0 20px rgba(102, 0, 0, 0.5);
+        }
+
+        /* Título que diminui sozinho em telas pequenas */
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1.5rem, 8vw, 2.5rem); /* Ajusta o tamanho entre 1.5rem e 2.5rem automaticamente */
+            color: #fff;
+            margin: 0 0 10px 0;
+            text-shadow: 0 0 10px var(--bright-red);
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: clamp(0.7rem, 3vw, 1rem);
+            letter-spacing: 3px;
+            margin-bottom: 35px;
+            text-transform: uppercase;
+        }
+
+        /* Botões com tamanhos idênticos e responsivos */
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            width: 100%;
+        }
+
         .btn {
-            padding: 15px 35px; border-radius: 12px; border: none; font-weight: bold;
-            cursor: pointer; text-decoration: none; display: inline-block; margin: 15px; transition: 0.3s;
+            font-family: 'Orbitron', sans-serif;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%; /* Ocupa toda a largura interna do cartão */
+            max-width: 300px; /* Limite para não ficar largo demais no PC */
+            height: 55px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            transition: 0.3s;
+            cursor: pointer;
+            box-sizing: border-box;
         }
-        .btn-blue { background: #00d2ff; color: #000; }
-        .btn-blue:hover { box-shadow: 0 0 25px #00d2ff; transform: translateY(-3px); }
-        .btn-outline { background: transparent; color: white; border: 2px solid white; }
-        .btn-outline:hover { background: white; color: #000; }
-        
+
+        .btn-primary {
+            background: var(--deep-red);
+            color: white;
+            border: 1px solid var(--bright-red);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #fff;
+            border: 2px solid var(--deep-red);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Modal que se ajusta à tela */
         #modal, #overlay { display: none; position: fixed; }
-        #overlay { top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 99; }
+        #overlay { top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 10; }
         #modal {
             top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: #161625; padding: 40px; border-radius: 20px;
-            border: 2px solid #00d2ff; z-index: 100; width: 320px;
+            background: #050000; width: 85%; max-width: 350px;
+            padding: 25px; border: 1px solid var(--bright-red);
+            border-radius: 8px; z-index: 11;
         }
-        .bot-option {
-            display: flex; align-items: center; padding: 15px; margin: 15px 0;
-            background: rgba(255,255,255,0.05); border-radius: 12px;
-            text-decoration: none; color: white; transition: 0.2s;
+
+        .bot-opt {
+            display: flex; align-items: center; padding: 15px; margin: 12px 0;
+            background: rgba(50, 0, 0, 0.3); border-radius: 6px;
+            text-decoration: none; color: white; border: 1px solid var(--deep-red);
         }
-        .bot-option:hover { background: rgba(255,255,255,0.1); border-left: 4px solid #00d2ff; }
-        .bot-option img { width: 50px; height: 50px; border-radius: 50%; margin-right: 15px; object-fit: cover; }
+
+        .bot-opt img { width: 45px; height: 45px; border-radius: 50%; margin-right: 15px; border: 1px solid var(--bright-red); }
+        .bot-opt strong { font-size: 0.95rem; display: block; }
+        .bot-opt small { color: #888; font-size: 0.75rem; }
     </style>
 </head>
 <body>
-    <div class="glass-card">
-        <h1>Spam_Bot.exe</h1>
-        <p>Faça spam em servidores de modo anônimo.</p>
-        <button class="btn btn-blue" onclick="toggleModal(true)">Adicionar Bot</button>
-        <a href="https://discord.gg/ure7pvshFW" class="btn btn-outline" target="_blank">Nosso Servidor</a>
+
+    <canvas id="q"></canvas>
+
+    <div class="main-container">
+        <h1>SP4M_BOT.exe</h1>
+        <div class="subtitle">Bot de Spam Anônimo</div>
+        
+        <div class="btn-group">
+            <div class="btn btn-primary" onclick="toggle(true)">USAR BOT</div>
+            <a href="https://discord.gg/ure7pvshFW" class="btn btn-outline" target="_blank">ENTRAR NO SERVIDOR</a>
+        </div>
     </div>
 
-    <div id="overlay" onclick="toggleModal(false)"></div>
+    <div id="overlay" onclick="toggle(false)"></div>
     <div id="modal">
-        <h3 style="margin-top:0">Selecione a Versão:</h3>
+        <h3 style="color:var(--bright-red); font-family:'Orbitron'; text-align:center; margin-top:0; font-size: 1.2rem;">SELECT CORE</h3>
         
-        <a href="https://discord.com/oauth2/authorize?client_id=1450999942960382074&integration_type=1&scope=applications.commands+identify" class="bot-option" target="_blank">
-            <img src="https://cdn.discordapp.com/attachments/1445951868562837586/1451255753263415537/static_8.png?ex=694582be&is=6944313e&hm=8bc524996d82d6d3ae02efebb61acb0c95bced2f338128cafe219c8f496f0393&" alt="SB.exe">
-            <div><strong>Recomendado</strong><br><small>SB.EXE 2.0</small></div>
+        <a href="https://discord.com/oauth2/authorize?client_id=1450999942960382074&integration_type=1&scope=applications.commands+identify" class="bot-opt" target="_blank">
+            <img src="https://cdn.discordapp.com/attachments/1445951868562837586/1451255753263415537/static_8.png" alt="SB">
+            <div><strong>Recomendado</strong><small>SB.exe Core</small></div>
         </a>
 
-        <a href="https://discord.com/oauth2/authorize?client_id=1451050687017517089&integration_type=1&scope=applications.commands+identify" class="bot-option" target="_blank">
-            <img src="https://cdn.discordapp.com/attachments/1445951868562837586/1451256856121970688/66_Sem_Titulo_20251218135534.png?ex=694583c5&is=69443245&hm=32f2ca0655834e1bcfd23a9ca5fb925c9ce042fe16b80ff51ad39641d5bf6077&" alt="Discord">
-            <div><strong>Disfarçado</strong><br><small>Fake Discord</small></div>
+        <a href="https://discord.com/oauth2/authorize?client_id=1451050687017517089&integration_type=1&scope=applications.commands+identify" class="bot-opt" target="_blank">
+            <img src="https://cdn.discordapp.com/attachments/1445951868562837586/1451256856121970688/66_Sem_Titulo_20251218135534.png" alt="Disc">
+            <div><strong>Disfarçado</strong><small>Discord Module</small></div>
         </a>
     </div>
 
     <script>
-        function toggleModal(s) {
+        // Matrix Rain - Corrigido para parecer código, não estrelas
+        const c = document.getElementById('q');
+        const ctx = c.getContext('2d');
+        let w = c.width = window.innerWidth;
+        let h = c.height = window.innerHeight;
+        
+        // Caracteres Hacker (Binário e Hexadecimal)
+        const hex = "0123456789ABCDEF01";
+        const charArr = hex.split("");
+        const fontSize = 14;
+        const columns = w / fontSize;
+        const drops = [];
+
+        for (let x = 0; x < columns; x++) drops[x] = 1;
+
+        const draw = () => {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+            ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = '#440000'; // Vermelho bem escuro para o código
+            ctx.font = fontSize + 'px monospace';
+            for (let i = 0; i < drops.length; i++) {
+                const text = charArr[Math.floor(Math.random() * charArr.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > h && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        };
+        setInterval(draw, 35);
+
+        window.onresize = () => { 
+            w = c.width = window.innerWidth; 
+            h = c.height = window.innerHeight; 
+        };
+
+        function toggle(s) {
             document.getElementById('modal').style.display = s ? 'block' : 'none';
             document.getElementById('overlay').style.display = s ? 'block' : 'none';
         }
     </script>
 </body>
 </html>
+? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>
+><strong>NÚCLEO CAMUFLADO</strong><br><small>Integração Discord Padrão</small></div>
+        </a>
+    </div>
+
+    <script>
+        function toggleModal(show) {
+            const modal = document.getElementById('modal');
+            const overlay = document.getElementById('overlay');
+            
+            if (show) {
+                overlay.style.display = 'block';
+                modal.style.display = 'block';
+                // Pequena animação de entrada
+                modal.style.opacity = '0';
+                setTimeout(() => modal.style.opacity = '1', 50);
+            } else {
+                overlay.style.display = 'none';
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
+>
+>
+html>
+>
+>
