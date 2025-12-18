@@ -1,13 +1,12 @@
 {
-  "name": "discord-bot-say",
+  "name": "multi-bot-discord",
   "version": "1.0.0",
-  "description": "Bot de repetição para Discord",
+  "description": "Sistema multi-bot para o Render",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "discord.js": "^14.16.3"
+    "discord.js": "^14.16.0"
   }
 }
-
