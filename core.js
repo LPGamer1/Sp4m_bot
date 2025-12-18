@@ -16,7 +16,7 @@ const RAID_MSG = `https://images-ext-1.discordapp.net/external/wRXhfKv8h9gdaolqa
 
 const BUTTON_TEXTS = [
   "🎁 RESGATAR NITRO", "💎 COLETAR GEMAS", "🔥 ACESSO VIP", "⭐ RECOMPENSA", "🚀 BOOST GRÁTIS",
-  "🎮 JOGAR AGORA", "🎁 GIFT CARD", "🔓 DESBLOQUEAR", "🛡️ SP4M B0T", "✨ ESPECIAL",
+  "🎮 JOGAR AGORA", "🎁 GIFT CARD", "🔓 DESBLOQUEAR", "🛡️ SP4M BOT", "✨ ESPECIAL",
   "💰 SORTEIO", "📍 LOCALIZAÇÃO", "📱 MOBILE APP", "💻 DESKTOP", "👑 PREMIUM"
 ];
 
