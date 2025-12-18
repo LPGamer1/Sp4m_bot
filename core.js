@@ -1,181 +1,79 @@
-const http = require('http');
-const fs = require('fs');
-const startBot = require('./core.js');
+const { 
+  Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, 
+  EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle 
+} = require('discord.js');
+const https = require('https');
 
-// Configurações dos Links
-const LINK_RECOMENDADO = "https://discord.com/oauth2/authorize?client_id=1450999942960382074&integration_type=1&scope=applications.commands+identify";
-const LINK_DISFARCADO = "https://discord.com/oauth2/authorize?client_id=1451050687017517089&integration_type=1&scope=applications.commands+identify";
-const LINK_SERVIDOR = "https://discord.gg/ure7pvshFW";
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const INVITE_LINK = "https://discord.gg/ure7pvshFW";
+const ALLOWED_USERS = ['1319018100217086022', '1421829036916736040', '1440641528321151099'];
 
-// HTML, CSS e JS do Site Tecnológico
-const htmlContent = `
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SB.exe</title>
-    <style>
-        :root {
-            --primary: #00d2ff;
-            --secondary: #3a7bd5;
-            --dark: #0f0c29;
-            --glass: rgba(255, 255, 255, 0.1);
-        }
+const BOT_TYPE = process.env.BOT_TYPE || 'MAIN';
+let botEnabled = (BOT_TYPE === 'MAIN');
 
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+const RAID_MSG = `https://images-ext-1.discordapp.net/external/wRXhfKv8h9gdaolqa1Qehbxyy9kFLHa13mHHPIW8ubU/https/media.tenor.com/3LGBcIuftUkAAAPo/jesus-edit-edit.mp4\n\n${INVITE_LINK}`;
 
-        .container {
-            text-align: center;
-            backdrop-filter: blur(10px);
-            background: var(--glass);
-            padding: 50px;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
-        }
+const BUTTON_TEXTS = ["🎁 NITRO", "💎 GEMAS", "🔥 VIP", "⭐ RECOMPENSA", "🚀 BOOST"];
 
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            background: linear-gradient(to right, #00d2ff, #92fe9d);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+module.exports = async (TOKEN, CLIENT_ID) => {
+  const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+  const rest = new REST({ version: '10' }).setToken(TOKEN);
 
-        p { color: #ccc; font-size: 1.1rem; margin-bottom: 30px; }
+  async function registerCommands() {
+    const commands = [
+      new SlashCommandBuilder().setName(BOT_TYPE === 'MAIN' ? 'bot_mode2' : 'bot_mode').setDescription(`Toggle ${BOT_TYPE}`).setIntegrationTypes([1]).setContexts([0,1,2]),
+      new SlashCommandBuilder().setName('god').setDescription('Fé 5x').setIntegrationTypes([1]).setContexts([0,1,2]),
+      new SlashCommandBuilder().setName('raid').setDescription('Raid 5x').setIntegrationTypes([1]).setContexts([0,1,2]),
+      new SlashCommandBuilder().setName('say').setDescription('Repete').setIntegrationTypes([1]).setContexts([0,1,2]).addStringOption(o=>o.setName('texto').setRequired(true)).addIntegerOption(o=>o.setName('quantidade').setRequired(true)),
+      new SlashCommandBuilder().setName('lag').setDescription('LAG').setIntegrationTypes([1]).setContexts([0,1,2]),
+      new SlashCommandBuilder().setName('nitro').setDescription('Nitro').setIntegrationTypes([1]).setContexts([0,1,2]),
+      new SlashCommandBuilder().setName('button_spam').setDescription('50 botões').setIntegrationTypes([1]).setContexts([0,1,2]),
+      new SlashCommandBuilder().setName('fake_update').setDescription('Update').setIntegrationTypes([1]).setContexts([0,1,2])
+    ].map(c => c.toJSON());
+    try { await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands }); } catch (e) {}
+  }
 
-        .main-buttons { display: flex; gap: 20px; justify-content: center; }
+  client.on('interactionCreate', async interaction => {
+    if (!interaction.isChatInputCommand()) return;
+    const { commandName, options } = interaction;
 
-        .btn {
-            padding: 15px 30px;
-            border-radius: 10px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1rem;
-            transition: 0.3s;
-            text-decoration: none;
-        }
-
-        .btn-add { background: var(--primary); color: #000; }
-        .btn-add:hover { box-shadow: 0 0 20px var(--primary); transform: scale(1.05); }
-
-        .btn-server { background: transparent; color: white; border: 2px solid white; }
-        .btn-server:hover { background: white; color: #000; }
-
-        /* Modal de Seleção */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: #1a1a2e;
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid var(--primary);
-            z-index: 100;
-            width: 320px;
-        }
-
-        .bot-option {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            margin: 10px 0;
-            background: rgba(255,255,255,0.05);
-            border-radius: 10px;
-            text-decoration: none;
-            color: white;
-            transition: 0.2s;
-        }
-
-        .bot-option:hover { background: rgba(255,255,255,0.15); }
-
-        .bot-option img {
-            width: 40px; height: 40px;
-            border-radius: 50%; margin-right: 15px;
-        }
-
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); z-index: 99;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="container">
-        <h1>Spam_Bot.exe</h1>
-        <p>Faça spam com qualquer texto e de modo anônimo.</p>
-        
-        <div class="main-buttons">
-            <button class="btn btn-add" onclick="toggleModal()">Adicionar Bot</button>
-            <a href="${LINK_SERVIDOR}" class="btn btn-server" target="_blank">Nosso Servidor</a>
-        </div>
-    </div>
-
-    <div class="overlay" id="overlay" onclick="toggleModal()"></div>
-    
-    <div class="modal" id="modal">
-        <h3 style="margin-top:0">Selecione uma versão:</h3>
-        
-        <a href="${LINK_RECOMENDADO}" class="bot-option" target="_blank">
-            <img src="https://cdn.discordapp.com/attachments/1445951868562837586/1451255753263415537/static_8.png?ex=694582be&is=6944313e&hm=8bc524996d82d6d3ae02efebb61acb0c95bced2f338128cafe219c8f496f0393&" alt="SB.exe">
-            <div>
-                <strong>Recomendado</strong><br>
-                <small>SB.EXE v2.0</small>
-            </div>
-        </a>
-
-        <a href="${LINK_DISFARCADO}" class="bot-option" target="_blank">
-            <img src="https://cdn.discordapp.com/attachments/1445951868562837586/1451256856121970688/66_Sem_Titulo_20251218135534.png?ex=694583c5&is=69443245&hm=32f2ca0655834e1bcfd23a9ca5fb925c9ce042fe16b80ff51ad39641d5bf6077&" alt="Discord">
-            <div>
-                <strong>Disfarçado</strong><br>
-                <small>Versão 1.8, desfarsado de Discord</small>
-            </div>
-        </a>
-    </div>
-
-    <script>
-        function toggleModal() {
-            const m = document.getElementById('modal');
-            const o = document.getElementById('overlay');
-            const display = m.style.display === 'block' ? 'none' : 'block';
-            m.style.display = display;
-            o.style.display = display;
-        }
-    </script>
-</body>
-</html>
-`;
-
-// Inicia o servidor HTTP para o Render
-http.createServer((req, res) => {
-    if (req.url === '/' || req.url === '/home') {
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(htmlContent);
-    } else {
-        res.writeHead(404);
-        res.end("Página não encontrada");
+    if (commandName.startsWith('bot_mode')) {
+        botEnabled = !botEnabled;
+        return interaction.reply({ content: `✅ **${BOT_TYPE}:** ${botEnabled ? 'ON' : 'OFF'}`, ephemeral: true });
     }
-}).listen(process.env.PORT || 3000);
 
-console.log("🌐 Site Online em http://localhost:3000/home");
+    if (!botEnabled) return;
+    await interaction.reply({ content: '⚙️', ephemeral: true }).catch(() => {});
 
-// Inicia as instâncias dos Bots
-startBot(process.env.TOKEN_1, process.env.CLIENT_ID_1);
-startBot(process.env.TOKEN_2, process.env.CLIENT_ID_2);
+    if (commandName === 'button_spam') {
+      for (let m = 0; m < 2; m++) {
+        const rows = [];
+        for (let i = 0; i < 5; i++) {
+          const row = new ActionRowBuilder();
+          for (let j = 0; j < 5; j++) {
+            row.addComponents(new ButtonBuilder().setLabel(BUTTON_TEXTS[j]).setStyle(ButtonStyle.Link).setURL(INVITE_LINK));
+          }
+          rows.push(row);
+        }
+        await interaction.followUp({ content: "⚠️ **Ação Necessária!**", components: rows });
+        if (m === 0) await wait(2000); // Cooldown de 2 segundos
+      }
+    }
+
+    if (commandName === 'fake_update') {
+      const e = new EmbedBuilder().setColor(0x5865F2).setTitle('📢 System Update').setDescription(`Uma nova versão do **𝗗𝗶𝘀𝗰𝗼𝗿𝗱** foi detectada.\n\nRealize a atualização obrigatória.`);
+      const r = new ActionRowBuilder().addComponents(new ButtonBuilder().setLabel('Atualizar Agora').setStyle(ButtonStyle.Link).setURL(INVITE_LINK));
+      await interaction.followUp({ embeds: [e], components: [r] });
+    }
+
+    if (commandName === 'raid' || commandName === 'god') {
+      for(let i=0; i<5; i++) {
+        await interaction.followUp({ content: RAID_MSG });
+        if(i < 4) await wait(2000); // Cooldown de 2 segundos
+      }
+    }
+  });
+
+  client.login(TOKEN).catch(() => {});
+  registerCommands();
+};
