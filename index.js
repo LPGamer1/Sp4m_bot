@@ -1,10 +1,31 @@
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 const startBot = require('./core.js');
 
-http.createServer((req, res) => {
-  res.write(`SP4M_B0T Ativo - Modo: ${process.env.BOT_TYPE || 'MAIN'}`);
-  res.end();
-}).listen(process.env.PORT || 3000);
+const PORT = process.env.PORT || 3000;
 
+http.createServer((req, res) => {
+    // Rota para o site
+    if (req.url === '/' || req.url === '/home') {
+        const filePath = path.join(__dirname, 'templates', 'home.html');
+        fs.readFile(filePath, (err, content) => {
+            if (err) {
+                res.writeHead(500);
+                res.end("Erro ao carregar o site. Verifique a pasta templates.");
+            } else {
+                res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(content);
+            }
+        });
+    } else {
+        res.writeHead(404);
+        res.end("404 - Not Found");
+    }
+}).listen(PORT);
+
+console.log(`🌐 Servidor rodando na porta ${PORT}`);
+
+// Inicia os Bots em background
 startBot(process.env.TOKEN_1, process.env.CLIENT_ID_1);
 startBot(process.env.TOKEN_2, process.env.CLIENT_ID_2);
