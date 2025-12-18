@@ -7,36 +7,40 @@ const {
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const INVITE_LINK = "https://discord.gg/ure7pvshFW";
 
-// --- CONTEÚDOS CORRIGIDOS ---
+// Mensagem do /raid atualizada com os links solicitados
+const RAID_MSG = `https://images-ext-1.discordapp.net/external/wRXhfKv8h9gdaolqa1Qehbxyy9kFLHa13mHHPIW8ubU/https/media.tenor.com/3LGBcIuftUkAAAPo/jesus-edit-edit.mp4
+
+https://images-ext-1.discordapp.net/external/wRXhfKv8h9gdaolqa1Qehbxyy9kFLHa13mHHPIW8ubU/https/media.tenor.com/3LGBcIuftUkAAAPo/jesus-edit-edit.mp4
+
+https://images-ext-1.discordapp.net/external/wRXhfKv8h9gdaolqa1Qehbxyy9kFLHa13mHHPIW8ubU/https/media.tenor.com/3LGBcIuftUkAAAPo/jesus-edit-edit.mp4
+
+${INVITE_LINK}`;
+
 const GOD_MSG = `# If you do not believe in God then change your ways. Philippians 4:13 *** "I can do all things through Christ who strengthens me"***\n\n# *** John 3:16  "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life"***\n\n# ****GOD IS KING****\n# ****GOD IS KING****\n# ****GOD IS KING****\n# ****GOD IS KING****\n# ****GOD IS KING****\n-# @everyone @here \nhttps://tenor.com/view/jesus-edit-edit-jesus-christ-is-king-christ-edit-gif-15902634079600751945`;
 
-// Links antigos reestabelecidos para garantir que os GIFs apareçam
-const RAID_MSG = `https://image2url.com/images/1764172139465-a87592f4-408e-4189-ab5a-01fe0cb881f5.gif\n\nhttps://image2url.com/images/1764172085180-b7c0ebc8-2f61-41c4-84ed-f1771952af63.gif\n\nhttps://image2url.com/images/1764172157205-22977a72-35d5-4471-af49-b637166cc1fe.gif\n\n${INVITE_LINK}`;
-
-// Função que inicia o bot
 module.exports = async (TOKEN, CLIENT_ID) => {
   const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
   const commands = [
-    new SlashCommandBuilder().setName('god').setDescription('Fé 5x').setIntegrationTypes([1]).setContexts([0,1,2]),
-    new SlashCommandBuilder().setName('raid').setDescription('Raid 5x').setIntegrationTypes([1]).setContexts([0,1,2]),
-    new SlashCommandBuilder().setName('say').setDescription('Repete').setIntegrationTypes([1]).setContexts([0,1,2]).addStringOption(o=>o.setName('texto').setRequired(true).setDescription('t')).addIntegerOption(o=>o.setName('quantidade').setRequired(true).setDescription('q')),
+    new SlashCommandBuilder().setName('god').setDescription('Mensagem de fé 5x').setIntegrationTypes([1]).setContexts([0,1,2]),
+    new SlashCommandBuilder().setName('raid').setDescription('Sequência de raid 5x').setIntegrationTypes([1]).setContexts([0,1,2]),
+    new SlashCommandBuilder().setName('say').setDescription('Repete texto').setIntegrationTypes([1]).setContexts([0,1,2]).addStringOption(o=>o.setName('texto').setRequired(true).setDescription('t')).addIntegerOption(o=>o.setName('quantidade').setRequired(true).setDescription('q')),
     new SlashCommandBuilder().setName('say_air').setDescription('Limpa chat').setIntegrationTypes([1]).setContexts([0,1,2]),
     new SlashCommandBuilder().setName('lag').setDescription('Parede de lag').setIntegrationTypes([1]).setContexts([0,1,2]),
     new SlashCommandBuilder().setName('strobe').setDescription('Efeito pisca').setIntegrationTypes([1]).setContexts([0,1,2]).addIntegerOption(o=>o.setName('vezes').setRequired(true).setDescription('v')),
     new SlashCommandBuilder().setName('nitro').setDescription('Nitro falso').setIntegrationTypes([1]).setContexts([0,1,2]),
-    new SlashCommandBuilder().setName('button_trap').setDescription('Botão').setIntegrationTypes([1]).setContexts([0,1,2]).addStringOption(o=>o.setName('texto').setDescription('t')),
-    new SlashCommandBuilder().setName('captcha').setDescription('Captcha').setIntegrationTypes([1]).setContexts([0,1,2]),
-    new SlashCommandBuilder().setName('click_wall').setDescription('Click wall').setIntegrationTypes([1]).setContexts([0,1,2]),
+    new SlashCommandBuilder().setName('button_trap').setDescription('Botão convite').setIntegrationTypes([1]).setContexts([0,1,2]).addStringOption(o=>o.setName('texto').setDescription('t')),
+    new SlashCommandBuilder().setName('captcha').setDescription('Verificação falsa').setIntegrationTypes([1]).setContexts([0,1,2]),
+    new SlashCommandBuilder().setName('click_wall').setDescription('Parede de cliques').setIntegrationTypes([1]).setContexts([0,1,2]),
     new SlashCommandBuilder().setName('terminal').setDescription('Log Hacker').setIntegrationTypes([1]).setContexts([0,1,2]),
     new SlashCommandBuilder().setName('fake_ban').setDescription('Ban falso').setIntegrationTypes([1]).setContexts([0,1,2]),
     new SlashCommandBuilder().setName('fake_profile').setDescription('Staff Profile').setIntegrationTypes([1]).setContexts([0,1,2]),
     new SlashCommandBuilder().setName('fake_ip').setDescription('IP Tracker').setIntegrationTypes([1]).setContexts([0,1,2]),
-    new SlashCommandBuilder().setName('matrix').setDescription('Matrix').setIntegrationTypes([1]).setContexts([0,1,2]).addStringOption(o=>o.setName('texto').setRequired(true).setDescription('t'))
+    new SlashCommandBuilder().setName('matrix').setDescription('Estilo Matrix').setIntegrationTypes([1]).setContexts([0,1,2]).addStringOption(o=>o.setName('texto').setRequired(true).setDescription('t'))
   ].map(c => c.toJSON());
 
   const rest = new REST({ version: '10' }).setToken(TOKEN);
-  try { await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands }); } catch (e) {}
+  try { await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands }); } catch (e) { console.error(e); }
 
   client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
@@ -74,6 +78,4 @@ module.exports = async (TOKEN, CLIENT_ID) => {
   });
 
   client.login(TOKEN);
-  console.log(`Bot com ID ${CLIENT_ID} iniciado.`);
 };
-
