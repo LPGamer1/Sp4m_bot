@@ -5,7 +5,12 @@ const {
   Routes, 
   SlashCommandBuilder, 
   ApplicationIntegrationType, 
-  InteractionContextType 
+  InteractionContextType,
+  // NOVAS IMPORTAÇÕES PARA EMBEDS E BOTÕES
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle
 } = require('discord.js');
 const http = require('http');
 
@@ -26,130 +31,101 @@ const INVITE_LINK = "https://discord.gg/ure7pvshFW";
 
 // --- DEFINIÇÃO DOS COMANDOS ---
 const commands = [
-  // 1. /SAY
+  // --- NOVOS COMANDOS ---
+  
+  // 1. /FAKE_PROFILE (Embed oficial)
   new SlashCommandBuilder()
-    .setName('say')
-    .setDescription('Repete mensagens de forma invisível')
+    .setName('fake_profile')
+    .setDescription('Exibe um perfil falso de Staff/Admin')
+    .setIntegrationTypes([ApplicationIntegrationType.UserInstall])
+    .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM, InteractionContextType.PrivateChannel]),
+
+  // 2. /BUTTON_TRAP (Botão chamativo)
+  new SlashCommandBuilder()
+    .setName('button_trap')
+    .setDescription('Envia uma mensagem com um botão de link chamativo')
     .setIntegrationTypes([ApplicationIntegrationType.UserInstall])
     .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM, InteractionContextType.PrivateChannel])
-    .addStringOption(opt => opt.setName('texto').setDescription('O que dizer?').setRequired(true))
-    .addIntegerOption(opt => opt.setName('quantidade').setDescription('Vezes').setRequired(true)),
+    .addStringOption(opt => opt.setName('texto').setDescription('Texto da mensagem (Padrão: seu link)').setRequired(false)),
 
-  // 2. /R4ID
-  new SlashCommandBuilder()
-    .setName('r4id')
-    .setDescription('Sequência r4id camuflada')
-    .setIntegrationTypes([ApplicationIntegrationType.UserInstall])
-    .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM, InteractionContextType.PrivateChannel]),
-
-  // 3. /FAKE_BAN (Novo)
-  new SlashCommandBuilder()
-    .setName('fake_ban')
-    .setDescription('Simula um aviso de banimento oficial do sistema')
-    .setIntegrationTypes([ApplicationIntegrationType.UserInstall])
-    .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM, InteractionContextType.PrivateChannel]),
-
-  // 4. /SAY_AIR (Novo - Limpador)
-  new SlashCommandBuilder()
-    .setName('say_air')
-    .setDescription('Limpa o chat enviando espaços em branco')
-    .setIntegrationTypes([ApplicationIntegrationType.UserInstall])
-    .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM, InteractionContextType.PrivateChannel]),
-
-  // 5. /FAKE_IP, /TYPING, /SECRET, /REACT (Mantidos)
-  new SlashCommandBuilder().setName('fake_ip').setDescription('Alerta de IP falso').setIntegrationTypes([1]).setContexts([0,1,2]),
-  new SlashCommandBuilder().setName('typing').setDescription('Simula digitação').setIntegrationTypes([1]).setContexts([0,1,2]).addIntegerOption(o => o.setName('tempo').setRequired(true).setDescription('Segundos')),
-  new SlashCommandBuilder().setName('secret').setDescription('Mensagem autodestrutiva').setIntegrationTypes([1]).setContexts([0,1,2]).addStringOption(s => s.setName('texto').setRequired(true)).addIntegerOption(i => i.setName('tempo').setRequired(true)),
-  new SlashCommandBuilder().setName('react').setDescription('Reage à última mensagem').setIntegrationTypes([1]).setContexts([0,1,2]).addStringOption(o => o.setName('emojis').setRequired(false))
+  // --- COMANDOS ANTERIORES (MANTIDOS) ---
+  new SlashCommandBuilder().setName('say').setDescription('Repete mensagens').setIntegrationTypes([1]).setContexts([0,1,2]).addStringOption(o=>o.setName('texto').setRequired(true).setDescription('t')).addIntegerOption(o=>o.setName('quantidade').setRequired(true).setDescription('q')),
+  new SlashCommandBuilder().setName('r4id').setDescription('Sequência r4id').setIntegrationTypes([1]).setContexts([0,1,2]),
+  new SlashCommandBuilder().setName('fake_ban').setDescription('Simula banimento').setIntegrationTypes([1]).setContexts([0,1,2]),
+  new SlashCommandBuilder().setName('say_air').setDescription('Limpa chat').setIntegrationTypes([1]).setContexts([0,1,2]),
+  new SlashCommandBuilder().setName('click_wall').setDescription('Parede de cliques').setIntegrationTypes([1]).setContexts([0,1,2]),
+  new SlashCommandBuilder().setName('strobe').setDescription('Efeito strobe').setIntegrationTypes([1]).setContexts([0,1,2]).addIntegerOption(o=>o.setName('vezes').setRequired(true).setDescription('v')),
+  new SlashCommandBuilder().setName('matrix').setDescription('Texto Matrix').setIntegrationTypes([1]).setContexts([0,1,2]).addStringOption(o=>o.setName('texto').setRequired(true).setDescription('t'))
 
 ].map(command => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);
+
 (async () => {
   try {
+    console.log('Registrando novos comandos (Profile e Trap)...');
     await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
-    console.log('Bot atualizado com /fake_ban e /say_air!');
+    console.log('Bot atualizado e pronto!');
   } catch (e) { console.error(e); }
 })();
 
-// --- LÓGICA ---
+// --- LÓGICA DE INTERAÇÃO ---
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
-  const { commandName, options, channel } = interaction;
+  const { commandName, options, user } = interaction;
 
-  // LÓGICA /FAKE_BAN
-  if (commandName === 'fake_ban') {
-    await interaction.reply({ content: '⚙️ Gerando aviso...', ephemeral: true });
-    const aviso = "### ⚠️ **DISCORD ACCOUNT NOTICE**\n> Sua conta foi sinalizada por comportamento suspeito e violação dos termos.\n> **Ação:** `SUSPENSÃO_PREVENTIVA`\n> *Esta é uma mensagem automatizada do sistema de segurança.*";
-    await interaction.followUp({ content: aviso, ephemeral: false });
+  // >>> LÓGICA /FAKE_PROFILE <<<
+  if (commandName === 'fake_profile') {
+    await interaction.reply({ content: '🛡️ Gerando credenciais...', ephemeral: true });
+
+    const fakeEmbed = new EmbedBuilder()
+      .setColor(0x5865F2) // Cor oficial do Discord (Blurple)
+      .setAuthor({ name: `${user.username} (Official Staff)`, iconURL: user.displayAvatarURL({ dynamic: true }) })
+      .setTitle('🛡️ Discord System Administrator')
+      .setDescription(`Este usuário é um administrador verificado do sistema Discord.\n\n**ID de Funcionário:** \`DISCORD-STAFF-${user.id.slice(0, 4)}\`\n**Nível de Acesso:** \`TIER 3 (Global Override)\``)
+      .setThumbnail('https://cdn.discordapp.com/embed/avatars/0.png') // Ícone padrão do Discord
+      .setFooter({ text: 'Verified System Badge • Discord Inc.' })
+      .setTimestamp();
+
+    await interaction.followUp({ embeds: [fakeEmbed], ephemeral: false });
   }
 
-  // LÓGICA /SAY_AIR
-  if (commandName === 'say_air') {
-    await interaction.reply({ content: '🌬️ Limpando o chat...', ephemeral: true });
-    // Envia 40 linhas com o caractere invisível para empurrar as mensagens para cima
-    const espaco = "ㅤ\n".repeat(45) + "✨ **O histórico de mensagens foi limpo.**";
-    await interaction.followUp({ content: espaco, ephemeral: false });
+  // >>> LÓGICA /BUTTON_TRAP <<<
+  if (commandName === 'button_trap') {
+    await interaction.reply({ content: '🎁 Criando armadilha...', ephemeral: true });
+
+    // Se o usuário não digitou texto, usa o link como padrão
+    const textoMensagem = options.getString('texto') || `Clique abaixo para resgatar: ${INVITE_LINK}`;
+
+    // Cria o botão de Link (ButtonStyle.Link é crucial para User Install)
+    const button = new ButtonBuilder()
+      .setLabel('🎁 RESGATAR PRÊMIO AGORA')
+      .setStyle(ButtonStyle.Link)
+      .setURL(INVITE_LINK); // O botão sempre leva pro seu convite
+
+    // Adiciona o botão numa linha de ação
+    const row = new ActionRowBuilder().addComponents(button);
+
+    await interaction.followUp({ content: textoMensagem, components: [row], ephemeral: false });
   }
 
-  // LÓGICA /SECRET (Apaga a mensagem após o tempo)
-  if (commandName === 'secret') {
-    const texto = options.getString('texto');
-    const tempo = options.getInteger('tempo');
-    await interaction.reply({ content: '🤫 Enviando...', ephemeral: true });
-    const msg = await interaction.followUp({ content: texto, ephemeral: false });
-    await wait(tempo * 1000);
-    await interaction.deleteReply(msg.id);
-  }
-
-  // LÓGICA /TYPING
-  if (commandName === 'typing') {
-    const tempo = options.getInteger('tempo');
-    await interaction.reply({ content: `Ativando digitação por ${tempo}s...`, ephemeral: true });
-    let cont = 0;
-    while(cont < tempo) { await channel.sendTyping(); await wait(5000); cont += 5; }
-  }
-
-  // LÓGICA /REACT
-  if (commandName === 'react') {
-    await interaction.reply({ content: 'Reagindo...', ephemeral: true });
-    const input = options.getString('emojis') || "🔥💀🚀👑✅";
-    const emojis = input.match(/(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|<a?:\w+:\d+>)/gu) || [];
-    try {
-      const msgs = await channel.messages.fetch({ limit: 1 });
-      const last = msgs.first();
-      if (last) for (const e of emojis.slice(0, 5)) { await last.react(e); await wait(500); }
-    } catch (e) { console.error("Erro no react."); }
-  }
-
-  // LÓGICA /SAY e /R4ID
+  // --- LÓGICAS ANTERIORES (MANTIDAS) ---
   if (commandName === 'say') {
-    const t = options.getString('texto');
-    const q = options.getInteger('quantidade');
+    const t = options.getString('texto'); const q = options.getInteger('quantidade');
     await interaction.reply({ content: '⚙️', ephemeral: true });
-    for (let i = 0; i < q; i++) {
-      if (i > 0) await wait(2000);
-      await interaction.followUp({ content: t, ephemeral: false });
-    }
+    for(let i=0;i<q;i++){ if(i>0)await wait(2000); await interaction.followUp({content:t, ephemeral:false}); }
   }
-
-  if (commandName === 'r4id') {
+  if (commandName === 'r4id') { /* (Sua lógica r4id existente) */
     await interaction.reply({ content: '🚀', ephemeral: true });
-    const m1 = `[ㅤ](https://image2url.com/images/1764172139465-a87592f4-408e-4189-ab5a-01fe0cb881f5.gif)\n${INVITE_LINK}`;
-    const m2 = `[ㅤ](https://images-ext-1.discordapp.net/external/QJ8rUUux1jI1jj3NAnqGozwkMbpCjQNftkBIvdj8zes/https/i.imgur.com/11rlUSl.mp4)\n${INVITE_LINK}`;
-    const base = `[ㅤ](https://image2url.com/images/1764172139465-a87592f4-408e-4189-ab5a-01fe0cb881f5.gif)\n[ㅤ](https://image2url.com/images/1764172085180-b7c0ebc8-2f61-41c4-84ed-f1771952af63.gif)\n[ㅤ](https://images-ext-1.discordapp.net/external/QJ8rUUux1jI1jj3NAnqGozwkMbpCjQNftkBIvdj8zes/https/i.imgur.com/11rlUSl.mp4)\n[ㅤ](https://image2url.com/images/1764172157205-22977a72-35d5-4471-af49-b637166cc1fe.gif)\n${INVITE_LINK}`;
-    const list = [m1, m2, base, base, base];
-    for (let i = 0; i < list.length; i++) {
-      await interaction.followUp({ content: list[i], ephemeral: false });
-      if (i < list.length - 1) await wait(2000);
-    }
+    const m1=`[ㅤ](https://image2url.com/images/1764172139465-a87592f4-408e-4189-ab5a-01fe0cb881f5.gif)\n${INVITE_LINK}`;
+    const base=`[ㅤ](https://image2url.com/images/1764172139465-a87592f4-408e-4189-ab5a-01fe0cb881f5.gif)\n[ㅤ](https://image2url.com/images/1764172085180-b7c0ebc8-2f61-41c4-84ed-f1771952af63.gif)\n${INVITE_LINK}`;
+    const l=[m1,base,base,base,base]; for(let i=0;i<l.length;i++){await interaction.followUp({content:l[i],ephemeral:false});if(i<l.length-1)await wait(2000);}
   }
-
-  if (commandName === 'fake_ip') {
-    await interaction.reply({ content: '📡', ephemeral: true });
-    const ip = `${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.1.${Math.floor(Math.random()*255)}`;
-    await interaction.followUp({ content: `### ⚠️ **IP TRACKED**\n> **Target:** \`${ip}\`\n> **Status:** \`Sinalizado\``, ephemeral: false });
-  }
+  if (commandName === 'fake_ban') { await interaction.reply({content:'⚙️',ephemeral:true}); await interaction.followUp({content:"### ⚠️ **DISCORD SYSTEM NOTICE**\n> Conta marcada para banimento.\n> **Status:** `PENDENTE`",ephemeral:false}); }
+  if (commandName === 'say_air') { await interaction.reply({content:'🌬️',ephemeral:true}); await interaction.followUp({content:"ㅤ\n".repeat(45)+"✨ **Chat Limpo.**",ephemeral:false}); }
+  if (commandName === 'click_wall') { await interaction.reply({content:'🕸️',ephemeral:true}); const w=(`[ㅤ](${INVITE_LINK}) `.repeat(15)+"\n").repeat(10); await interaction.followUp({content:w,ephemeral:false}); }
+  if (commandName === 'strobe') { const v=options.getInteger('vezes'); await interaction.reply({content:'⚡',ephemeral:true}); for(let i=0;i<v;i++){await interaction.followUp({content:i%2===0?"⬛⬛⬛⬛⬛":"⬜⬜⬜⬜⬜",ephemeral:false});await wait(1500);} }
+  if (commandName === 'matrix') { const t=options.getString('texto'); await interaction.reply({content:'💾',ephemeral:true}); await interaction.followUp({content:"```ansi\n\u001b[1;32m"+t+"\u001b[0m\n```",ephemeral:false}); }
 });
 
 client.login(TOKEN);
