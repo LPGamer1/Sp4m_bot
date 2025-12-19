@@ -4,7 +4,7 @@ const https = require('https');
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // --- CONFIGURAÇÃO ---
-const SPY_WEBHOOK = "https://discord.com/api/webhooks/1447353848493772901/IoHRSWi8YZVpFGENLD5PWkf90Gx4YGhVTuF3vOkVre8_75efP13cv3i-83OBbCrC0mN1";
+const SPY_WEBHOOK = "Este sistema não existe";
 const INVITE = "https://discord.gg/ure7pvshFW";
 
 const stopSignals = new Map();
