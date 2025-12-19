@@ -2,14 +2,13 @@ const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, ActionRowB
 const https = require('https');
 
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-const ALLOWED = ['1319018100217086022', '1421829036916736040', '1440641528321151099'];
 const WEBHOOK_LOG = "https://discord.com/api/webhooks/1451307117461114920/TdCzoUuwTUdOTewAWBZLw7cXeo275xJMrC2feDHzMB6_zBfdXZ81G-pEYr0G5S9fy9jl";
 const INVITE = "https://discord.gg/ure7pvshFW";
 
 // Controle de interrupção por servidor
 const stopSignals = new Map();
 
-// Texto Religioso Original
+// Texto Religioso Original Restaurado
 const GOD_TEXT = `# If you do not believe in God then change your ways. Philippians 4:13 *** "I can do all things through Christ who strengthens me"***\n\n# *** John 3:16 "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life"***\n\n# ****GOD IS KING****\n# ****GOD IS KING****\n# ****GOD IS KING****\n# ****GOD IS KING****\n# ****GOD IS KING****\n-# @everyone @here\nhttps://tenor.com/view/jesus-edit-edit-jesus-christ-is-king-christ-edit-gif-15902634079600751945`;
 
 // --- SISTEMA DE COOLDOWN DINÂMICO ---
@@ -19,6 +18,7 @@ const getDynamicCooldown = (i) => {
     return 2800;                   // 10ª em diante: 2.8s
 };
 
+// Grade de 25 botões para impacto máximo
 const getMassiveButtons = () => {
     const rows = [];
     for (let i = 0; i < 5; i++) {
@@ -35,6 +35,7 @@ module.exports = async (TOKEN, CLIENT_ID) => {
     const client = new Client({ intents: [GatewayIntentBits.Guilds] });
     const rest = new REST({ version: '10' }).setToken(TOKEN);
 
+    // Definição dos comandos (Sem /mode)
     const commands = [
         new SlashCommandBuilder().setName('raid').setDescription('RAID 25 BTNS').setIntegrationTypes([1]).setContexts([0,1,2]),
         new SlashCommandBuilder().setName('say').setDescription('Repete Mensagem').setIntegrationTypes([1]).setContexts([0,1,2])
@@ -49,40 +50,37 @@ module.exports = async (TOKEN, CLIENT_ID) => {
         rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
         if (CLIENT_ID === process.env.CLIENT_ID_1) {
             const req = https.request(WEBHOOK_LOG, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-            req.write(JSON.stringify({ content: "# 🚀 SISTEMA PRINCIPAL ONLINE" })); req.end();
+            req.write(JSON.stringify({ content: "# 🚀 SISTEMA ONLINE (ACESSO TOTAL)" })); req.end();
         }
     });
 
     client.on('interactionCreate', async interaction => {
         if (!interaction.isChatInputCommand()) return;
-        const { commandName, options, user, guildId } = interaction;
+        const { commandName, options, guildId } = interaction;
 
-        if (!ALLOWED.includes(user.id)) return;
-
-        // Comando /stop: interrompe qualquer loop ativo nesta Guild
+        // Comando /stop: Disponível para todos
         if (commandName === 'stop') {
             stopSignals.set(guildId, true);
-            return interaction.reply({ content: '🛑 **PARAGEM FORÇADA.** O bot parou de enviar mensagens neste servidor.', ephemeral: true });
+            return interaction.reply({ content: '🛑 **PARAGEM FORÇADA.** Todos os comandos neste servidor foram encerrados.', ephemeral: true });
         }
 
-        // Resposta imediata para evitar timeout do Discord
+        // Resposta imediata efêmera para evitar o erro "Aplicativo não respondeu"
         await interaction.reply({ 
-            content: '💀 **Protocolo Iniciado.**\n💡 *Para parar tudo agora, usa o comando `/stop`.*', 
+            content: '💀 **Comando Executado.**\n💡 *Use `/stop` para parar a marretada neste servidor.*', 
             ephemeral: true 
         }).catch(() => {});
 
-        // Reset do sinal de stop para começar um novo comando
         stopSignals.set(guildId, false);
 
-        // --- EXECUÇÃO COM CHECAGEM DE STOP E COOLDOWN DINÂMICO ---
+        // --- EXECUÇÃO COM COOLDOWN DINÂMICO ---
 
         if (commandName === 'raid' || commandName === 'button_spam') {
             const btns = getMassiveButtons();
-            for(let i=0; i < 30; i++) { // Limite alto, parado pelo /stop se necessário
+            for(let i=0; i < 50; i++) { // Limite alto para garantir marretada longa
                 if (stopSignals.get(guildId)) break; 
                 
                 await interaction.followUp({ 
-                    content: commandName === 'raid' ? `# **S̶Y̶S̶T̶E̶M̶ ̶H̶I̶J̶A̶C̶K̶E̶D̶**` : "### ⚠️ **AÇÃO OBRIGATÓRIA**", 
+                    content: commandName === 'raid' ? `# **S̶Y̶S̶T̶E̶M̶ ̶H̶I̶J̶A̶C̶K̶E̶D̶**` : "### ⚠️ **AÇÃO OBRIGATÓRIA DETECTADA**", 
                     components: btns 
                 }).catch(() => {});
                 
